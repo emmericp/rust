@@ -485,7 +485,9 @@ impl Step for Rustc {
                     let name = entry.file_name();
                     if let Some(s) = name.to_str() {
                         if is_dylib(s) {
-                            builder.install(&entry.path(), &image.join(&libdir_relative), 0o644);
+                            // Don't use custom libdir here because ^lib/ will be resolved again
+                            // with installer
+                            builder.install(&entry.path(), &image.join("lib"), 0o644);
                         }
                     }
                 }
@@ -493,8 +495,9 @@ impl Step for Rustc {
 
             // Copy over the codegen backends
             let backends_src = builder.sysroot_codegen_backends(compiler);
-            let backends_rel = backends_src.strip_prefix(&src).unwrap();
-            let backends_dst = image.join(&backends_rel);
+            let backends_rel = backends_src.strip_prefix(&libdir).unwrap();
+            // Don't use custom libdir here because ^lib/ will be resolved again with installer
+            let backends_dst = image.join("lib").join(&backends_rel);
             t!(fs::create_dir_all(&backends_dst));
             builder.cp_r(&backends_src, &backends_dst);
 
